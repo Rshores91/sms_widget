@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Join Our List</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+
+  <style>
+
+    
+    .checkbox-container {
+      display: flex; /* Use flexbox for layout */
+      flex-direction: column; /* Stack checkbox and label vertically */
+      align-items: center; /* Center the checkbox and label */
+      margin-top: 16px; /* Space above the checkbox */
+      margin-bottom: 16px; /* Space below the checkbox */
+      gap: 8px; /* Space between checkbox and label */
+    }
+
+    .checkbox-label {
+      font-weight: bold;
+      margin-bottom: 8px;
+      text-align: center
+    }
+
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f4f6f9;
+      padding: 20px;
+    }
+
+    form {
+      background: #fff; /* White background for the form */
+      padding: 40px 32px; /* Padding around the form */
+      border-radius: 10px;
+      max-width: 400px;
+      margin: auto; /* Center the form on the page */
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    }
+
+    h2 {
+      text-align: center; /* Center the heading */
+      color: #007BFF; /* Blue color for the heading */
+    }
+
+    label {
+      display: block; /* Block display for labels */
+      margin-top: 15px; /* Space between labels and inputs */
+      font-weight: bold; /* Bold labels */
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      box-sizing: border-box; /* Ensure padding is included in width */
+    }
+
+    select {
+      padding-right: 28px; /* Add padding for the dropdown arrow */
+    }
+
+    button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 12px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+
+<body>
+  <form action="{{ url_for('submit') }}" method="POST">
+    <!-- The form action is set to the URL for the submit_form route -->
+    <h2>Join Our VIP List</h2>
+    
+    <label for="name">Name</label>
+    <input type="text" name="name" required>
+
+    <label for="email">Email</label>
+    <input type="email" name="email" required>
+
+    <label for="phone">Phone Number</label>
+    <input type="tel" name="phone" required>
+
+    <label for="birthday">Birthday</label>
+    <input type="date" name="birthday">
+
+
+
+    <label for="event">Favorite Event Type</label>
+    <select name="event">
+      <option value="EDM">EDM</option>
+      <option value="Hip-Hop">Hip-Hop</option>
+      <option value="Karaoke">Karaoke</option>
+      <option value="Live Band">Live Band</option>
+    </select>
+
+    <div class="checkbox-container">
+      <label for="optin" class="checkbox-label">
+        I agree to receive text promotions
+      </label>
+      <input type="checkbox" id="optin" name="optin" required>
+    </div>
+    <!-- Checkbox for opting in to receive text promotions -->
+        
+
+    <button type="submit">Join</button>
+  </form>
+</body>
+</html>
+<!-- This is a simple HTML form for collecting customer information. It includes fields for name, phone number, birthday, and favorite event type. The form also includes a checkbox for opting in to receive text promotions. The form is styled with CSS for a clean and modern look. -->
+<!-- The form action is set to "/submit-form" which should be handled by the server-side code to process the form submission. -->
