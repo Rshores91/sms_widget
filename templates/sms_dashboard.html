@@ -1,10 +1,247 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <title>title</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMS Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 600;
+        }
+        .table-scroll {
+            max-height: 320px;
+            overflow-y: auto;
+        }
+        .badge-pill {
+            border-radius: 50px;
+        }
+    </style>
 </head>
 <body>
-    
+    <div class="container dashboard-container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Manager Dashboard</h2>
+            <div>
+                <span class="me-3">Welcome, {{ session.get('username') }}</span>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-danger btn-sm">Logout</a>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Metrics Overview -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <p class="text-muted mb-1">Total Customers</p>
+                        <div class="metric-value">{{ metrics.get('totalCustomers', 0) }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <p class="text-muted mb-1">SMS Opt-In Rate</p>
+                        <div class="metric-value">{{ metrics.get('optInRate', 0) }}%</div>
+                        <small class="text-muted">{{ metrics.get('optedInCustomers', 0) }} opted in</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <p class="text-muted mb-1">SMS Opt-Outs</p>
+                        <div class="metric-value">{{ metrics.get('optedOutCustomers', 0) }}</div>
+                        <small class="text-muted">{{ metrics.get('optedInCustomers', 0) }} opted in / {{ metrics.get('totalCustomers', 0) }} total</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Interest Breakdown</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="interestChart" height="220"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Upcoming Birthdays</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if metrics.get('upcomingBirthdays') %}
+                            <ul class="list-group list-group-flush">
+                                {% for birthday in metrics.get('upcomingBirthdays', []) %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ birthday.name }}</strong>
+                                            <div class="small text-muted">{{ birthday.interest }}</div>
+                                        </div>
+                                        <span class="badge bg-primary badge-pill">{{ birthday.daysUntilBirthday }} days</span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-muted mb-0">No upcoming birthdays in the next few weeks.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Single SMS Form -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Send Single SMS</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('send_sms') }}" method="POST">
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" placeholder="+1234567890" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Message</label>
+                        <textarea class="form-control" id="message" name="message" rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Send Message</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Bulk SMS Form -->
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Send Bulk SMS</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('send_bulk_sms') }}" method="POST">
+                    <div class="mb-3">
+                        <label for="tag" class="form-label">Recipient Tag (Format: type:value)</label>
+                        <select class="form-select" id="tag" name="tag" required>
+                            <option value="" selected disabled>Select a target group...</option>
+                            <option value="all:all">All Customers</option>
+                            {% for interest in interest_options %}
+                                <option value="event:{{ interest }}">Interest: {{ interest }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Select a group of customers to message.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="template" class="form-label">Message Template</label>
+                        <textarea class="form-control" id="template" name="template" rows="3" required>Hello {name}, check out our upcoming events!</textarea>
+                        <div class="form-text">Use {name} to insert the customer's name dynamically.</div>
+                    </div>
+                    <button type="submit" class="btn btn-success">Send Bulk Messages</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Customer Table -->
+        <div class="card">
+            <div class="card-header bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Customer Directory</h5>
+                    <span class="text-muted">Showing {{ customers|length }} records</span>
+                </div>
+            </div>
+            <div class="card-body table-scroll">
+                {% if customers %}
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Name</th>
+                                <th scope="col">Email</th>
+                                <th scope="col">Phone</th>
+                                <th scope="col">Interest</th>
+                                <th scope="col">SMS Opt-In</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for customer in customers %}
+                                <tr>
+                                    <td>{{ customer.name }}</td>
+                                    <td>{{ customer.email }}</td>
+                                    <td>{{ customer.phoneNumber }}</td>
+                                    <td>{{ customer.interest }}</td>
+                                    <td>
+                                        {% if customer.agreeToSms %}
+                                            <span class="badge bg-success">Yes</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">No</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="mb-0 text-muted">No customers found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        const interestData = JSON.parse(`{{ metrics.get('interestBreakdown', {}) | tojson | safe }}`);
+        const interestLabels = Object.keys(interestData);
+        const interestValues = Object.values(interestData);
+
+        if (interestLabels.length) {
+            const ctx = document.getElementById('interestChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: interestLabels,
+                    datasets: [{
+                        data: interestValues,
+                        backgroundColor: ['#0d6efd','#198754','#6f42c1','#fd7e14','#20c997','#ffc107','#0dcaf0'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+    </script>
 </body>
 </html>

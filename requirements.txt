@@ -1,0 +1,7 @@
+Flask
+twilio
+email-validator
+requests
+python-dotenv
+phonenumbers
+

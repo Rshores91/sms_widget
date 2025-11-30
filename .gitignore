@@ -1,0 +1,13 @@
+# Python virtual env
+venv/
+ECHO is on.
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+ECHO is on.
+# VSCode
+.vscode/
+ECHO is on.
+# OS files
+.DS_Store
+Thumbs.db
